@@ -5,7 +5,7 @@ dev_packages = ["flake8", "pytest", "jupyter", "jupyterlab"]
 
 setup(
     name="zep2md",
-    version="0.0.1",
+    version="0.0.2",
     packages=find_packages(exclude=["notebooks"]),
     install_requires=base_packages,
     entry_points={

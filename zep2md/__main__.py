@@ -37,8 +37,8 @@ def translate(
 
     table = (
         Clumper(data["paragraphs"], listify=False)
-        .select("text")
         .keep(lambda d: "text" in d.keys())
+        .select("text")
         .mutate(
             md=lambda d: d["text"].startswith("%md"),
             pyspark=lambda d: d["text"].startswith("%pyspark"),
