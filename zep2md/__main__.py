@@ -10,7 +10,7 @@ from pathlib import Path
 import typer
 
 app = typer.Typer(
-    name="demo",
+    name="zep2md",
     add_completion=False,
     help="This is app translates zeppelin files to markdown with syntax highlighting.",
 )
