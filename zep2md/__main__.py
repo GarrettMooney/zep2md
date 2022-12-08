@@ -1,13 +1,12 @@
 import codecs
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import typer
 from clumper import Clumper
-from pathlib import Path
-
-import typer
+from clumper.sequence import row_number
 
 app = typer.Typer(
     name="zep2md",
@@ -35,10 +34,21 @@ def translate(
     sink = p.name.replace(".zpln", ".md")
     data = json.load(codecs.open(source, "r", "utf-8-sig"))
 
-    table = (
+    titles = (
         Clumper(data["paragraphs"], listify=False)
+        .mutate(r=row_number())
+        .keep(lambda d: "title" in d.keys())
+        .select("r", "title")
+    )
+    text = (
+        Clumper(data["paragraphs"], listify=False)
+        .mutate(r=row_number())
         .keep(lambda d: "text" in d.keys())
-        .select("text")
+        .select("r", "text")
+    )
+    table = (
+        text.left_join(titles, mapping={"r": "r"})
+        .drop("r")
         .mutate(
             md=lambda d: d["text"].startswith("%md"),
             pyspark=lambda d: d["text"].startswith("%pyspark"),
@@ -75,12 +85,20 @@ def translate(
         ).tolist(),
         1,
     )
+    df["text"] = df.apply(
+        lambda x: np.where(
+            x["md"] == True, template("md", x["text"]), x["text"]
+        ).tolist(),
+        1,
+    )
 
-    text = df["text"].values
-    text = "\n".join([*text])
+    df["title"] = np.where(df["title"].isna(), "", df["title"])
+    df["aux"] = df["title"] + "\n\n" + df["text"] + "\n"
+    aux = df["aux"].values
+    aux = "\n".join([*aux])
 
     with open(sink, "w") as f:
-        f.write(text)
+        f.write(aux)
 
 
 if __name__ == "__main__":
